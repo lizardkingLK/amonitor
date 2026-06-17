@@ -1,0 +1,11 @@
+@AMonitor.API_HostAddress = http://localhost:5136
+
+GET {{AMonitor.API_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{AMonitor.API_HostAddress}}/todos/1
+Accept: application/json
+
+###
