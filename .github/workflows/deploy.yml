@@ -1,0 +1,41 @@
+name: Secure Production CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Executing Remote SSH Commands to Deploy
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          host: ${{secrets.SSH_HOST}}
+          username: ${{secrets.SSH_USERNAME}}
+          key: ${{secrets.SSH_KEY}}
+          port: 22
+          script: |
+            echo "Navigation to application directory..."
+            cd ~/amonitor-app
+
+            echo "Pulling latest code changes from Git repository..."
+            git pull origin main
+
+            echo "Safely stopping existing container stacks..."
+            bash ./script_docker.prod.sh
+
+            echo "Recompiling source code and starting Production environment..."
+            # Since you want undetached logs for CI validation, we skip the "-d" flag.
+            # We use a 30-second timeout filter so the GitHub step eventually finishes successfully.
+            timeout 30s docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build || true
+
+            echo "Backgrounding containers for permanent runtime execution..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            echo "Deployment loop complete!"

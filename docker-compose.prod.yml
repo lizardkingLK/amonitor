@@ -1,0 +1,28 @@
+services:
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+
+  dotnet_api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - Database__ConnectionString=Host=timescaledb;Database=alerts_db;Username=postgres;Password=secret
+
+  timescaledb:
+    volumes:
+      - timescaledb_data:/home/postgres/pgdata/data
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=3x2?F#wIh9Cod|!p=0VjeO5K=8%5{N
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  timescaledb_data:
+  grafana_data:
