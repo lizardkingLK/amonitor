@@ -1,0 +1,30 @@
+services:
+  nginx:
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+
+  dotnet_api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - Database__ConnectionString=Host=timescaledb;Database=alerts_db;Username=postgres;Password=secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  timescaledb:
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/home/postgres/pgdata/data
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=secret
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  timescaledb_data:
+  grafana_data:

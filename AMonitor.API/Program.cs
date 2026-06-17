@@ -10,9 +10,7 @@ public partial class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
-        //        
         builder.Logging.AddConsole();
-        //
 
         builder.AddAppConfigurations();
         builder.Services.AddDatabaseServices(builder.Configuration);
@@ -42,19 +40,7 @@ public partial class Program
             Console.Error.WriteLine(ex.StackTrace);
             Console.ResetColor();
 
-            // Force an exit code of 1 so Docker knows it crashed instead of cleanly exiting
             Environment.Exit(1);
         }
-
-
-        // WebApplication app = builder.Build();
-        // if (app.Environment.IsDevelopment())
-        // {
-        //     app.MapOpenApi();
-        // }
-
-        // app.ApplyMigrations();
-        // app.MapAlertRoutes();
-        // app.Run();
     }
 }
