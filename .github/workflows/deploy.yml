@@ -31,8 +31,6 @@ jobs:
             bash ./script_docker.prod.sh
 
             echo "Recompiling source code and starting Production environment..."
-            # Since you want undetached logs for CI validation, we skip the "-d" flag.
-            # We use a 30-second timeout filter so the GitHub step eventually finishes successfully.
             timeout 30s docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build || true
 
             echo "Backgrounding containers for permanent runtime execution..."
