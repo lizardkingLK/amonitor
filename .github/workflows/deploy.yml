@@ -21,19 +21,27 @@ jobs:
           key: ${{secrets.SSH_KEY}}
           port: 22
           script: |
-            echo "Navigation to application directory..."
-            cd ~/amonitor-app
+            echo "Checking if application directory exists..."
+            if [ ! -d "$HOME/amonitor-app" ]; then
+            echo "Fresh VM detected! Cloning repository for the first time..."
+            git clone ${{ secrets.REPO_URL }} $HOME/amonitor-app
+            fi
 
-            echo "Pulling latest code changes from Git repository..."
+            cd $HOME/amonitor-app
+
+            echo "Enforcing HTTPS format for Git remote origin..."
+            git remote set-url origin ${{ secrets.REPO_URL }}
+
+            echo "Pulling latest code updates..."
             git pull origin main
 
-            echo "Safely stopping existing container stacks..."
-            bash ./script_docker.prod.sh
+            echo "Safely stopping and cleaning up existing container stacks..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml down || true
 
             echo "Recompiling source code and starting Production environment..."
             timeout 30s docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build || true
 
-            echo "Backgrounding containers for permanent runtime execution..."
+            echo "Backgrounding containers for permanent cloud execution..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
             echo "Deployment loop complete!"
