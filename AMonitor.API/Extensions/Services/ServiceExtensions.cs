@@ -14,13 +14,18 @@ public static class ServiceExtensions
         QueueOptions? queueOptions = configuration
         .GetSection(QueueOptions.SectionName)
         .Get<QueueOptions>();
-        if (queueOptions == null || string.IsNullOrWhiteSpace(queueOptions.ConnectionString))
+        if (queueOptions == null ||
+        string.IsNullOrWhiteSpace(queueOptions.ConnectionString) ||
+        queueOptions.ConnectionString == "USE_DEVELOPMENT_PLACEHOLDER")
         {
-            throw new InvalidOperationException(
-                "error. queue ConnectionString is missing from configuration.");
+            services.AddSingleton<QueueClient>(provider => null!);
         }
-
-        services.AddSingleton(new QueueClient(queueOptions.ConnectionString, queueOptions.QueueName));
+        else
+        {
+            services.AddSingleton(new QueueClient(
+                queueOptions.ConnectionString,
+                queueOptions.QueueName));
+        }
 
         services.AddScoped<IAzureCommonAlertService, AzureCommonAlertService>();
 

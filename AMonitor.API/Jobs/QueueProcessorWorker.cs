@@ -1,24 +1,35 @@
 using AMonitor.API.Extensions.Logging;
+using AMonitor.API.Models.Options;
 using AMonitor.API.Services;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
+using Microsoft.Extensions.Options;
 
 namespace AMonitor.API.Jobs;
 
 public class QueueProcessorWorker(
     IServiceProvider serviceProvider,
     ILogger<QueueProcessorWorker> logger,
-    QueueClient queueClient) : BackgroundService
+    IOptions<QueueOptions> queueOptions,
+    QueueClient? queueClient = null) : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<QueueProcessorWorker> _logger = logger;
-    private readonly QueueClient _queueClient = queueClient;
+    private readonly IOptions<QueueOptions> _queueOptions = queueOptions;
+    private readonly QueueClient? _queueClient = queueClient;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (string.IsNullOrWhiteSpace(_queueOptions.Value.ConnectionString) ||
+        _queueOptions.Value.ConnectionString == "USE_DEVELOPMENT_PLACEHOLDER")
+        {
+            _logger.LogAmonitorInfo("local development environment. queue polling exits now");
+            return;
+        }
+
         _logger.LogAmonitorInfo("queue ingestion background worker has started");
 
-        await _queueClient.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
+        await _queueClient!.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             try

@@ -9,9 +9,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - Database__ConnectionString=
-      - Queue__ConnectionString=
-      - Queue__QueueName=
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
