@@ -9,7 +9,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - Database__ConnectionString=Host=timescaledb;Database=alerts_db;Username=postgres;Password=secret
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
