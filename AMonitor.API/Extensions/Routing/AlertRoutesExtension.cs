@@ -1,8 +1,8 @@
 using System.Text.Json;
 using AMonitor.API.Data;
 using AMonitor.API.Extensions.Configuration;
-using AMonitor.API.Extensions.Logging;
 using AMonitor.API.Models.Common;
+using AMonitor.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,31 +15,19 @@ public static class AlertRoutesExtension
         RouteGroupBuilder root = app.MapGroup("/api");
 
         root.MapGet("/azure-alerts",
-            () => "info. azure-alerts webhook is online 🟢...").WithName("GetAlerts");
+            () => "info. azure-alerts webhook is online 🟢...")
+            .WithName("GetAlerts");
 
         root.MapPost("/azure-alerts", async (
-            AzureCommonAlertPayload payload,
-            [FromServices] ApplicationDbContext dbContext,
-            ILogger<Program> logger) =>
+            [FromBody] JsonElement payload,
+            [FromServices] IAzureCommonAlertService azureCommonAlertService,
+            CancellationToken cancellationToken) =>
         {
-            Essentials? essentials = payload.Data?.Essentials;
+            string rawJson = payload.GetRawText();
 
-            logger.LogAzureAlert(
-                essentials?.AlertRule ?? string.Empty,
-                essentials?.Severity ?? string.Empty,
-                essentials?.TargetResourceName ?? string.Empty);
+            await azureCommonAlertService.CreateAlertAsync(rawJson, cancellationToken);
 
-            if (payload.Data != null)
-            {
-                payload.DataJson = JsonSerializer.Serialize(
-                    payload.Data,
-                    ConfigurationSerializerContext.Default.AlertData);
-            }
-
-            dbContext.Add(payload);
-            await dbContext.SaveChangesAsync();
-
-            return Results.Accepted();
+            return Results.Ok(new { message = "info. azure-alerts webhook processed 🟢" });
         })
         .WithName("PostAlert");
 

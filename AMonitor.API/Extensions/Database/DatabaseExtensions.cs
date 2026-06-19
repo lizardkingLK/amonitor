@@ -10,10 +10,10 @@ public static class DatabaseExtensions
     this IServiceCollection services,
     IConfiguration configuration)
     {
-        DatabaseOptions databaseOptions = new();
-        configuration.GetSection(DatabaseOptions.SectionName).Bind(databaseOptions);
-
-        if (string.IsNullOrWhiteSpace(databaseOptions.ConnectionString))
+        DatabaseOptions? databaseOptions = configuration
+        .GetSection(DatabaseOptions.SectionName)
+        .Get<DatabaseOptions>();
+        if (databaseOptions == null || string.IsNullOrWhiteSpace(databaseOptions.ConnectionString))
         {
             throw new InvalidOperationException(
                 "error. database ConnectionString is missing from configuration.");

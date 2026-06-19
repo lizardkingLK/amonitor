@@ -11,7 +11,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - Database__ConnectionString=Host=timescaledb;Database=alerts_db;Username=postgres;Password=secret
+      - Database__ConnectionString=${DB_CONNECTION_STRING}
+      - Queue__ConnectionString=${QUEUE_CONNECTION_STRING}
+      - Queue__QueueName=${QUEUE_NAME}
 
   timescaledb:
     volumes:
