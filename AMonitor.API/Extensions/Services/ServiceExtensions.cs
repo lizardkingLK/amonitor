@@ -27,7 +27,7 @@ public static class ServiceExtensions
                 queueOptions.QueueName));
         }
 
-        services.AddScoped<IAzureCommonAlertService, AzureCommonAlertService>();
+        services.AddScoped<AzureCommonAlertService>();
 
         services.AddHostedService<QueueProcessorWorker>();
 

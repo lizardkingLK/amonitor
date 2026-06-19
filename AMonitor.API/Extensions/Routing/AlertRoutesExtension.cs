@@ -20,7 +20,7 @@ public static class AlertRoutesExtension
 
         root.MapPost("/azure-alerts", async (
             [FromBody] JsonElement payload,
-            [FromServices] IAzureCommonAlertService azureCommonAlertService,
+            [FromServices] AzureCommonAlertService azureCommonAlertService,
             CancellationToken cancellationToken) =>
         {
             string rawJson = payload.GetRawText();

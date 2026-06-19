@@ -5,14 +5,9 @@ using AMonitor.API.Models.Common;
 
 namespace AMonitor.API.Services;
 
-public interface IAzureCommonAlertService
-{
-    Task CreateAlertAsync(string rawJson, CancellationToken cancellationToken);
-}
-
 public class AzureCommonAlertService(
     ApplicationDbContext dbContext,
-    ILogger<AzureCommonAlertService> logger) : IAzureCommonAlertService
+    ILogger<AzureCommonAlertService> logger)
 {
     private readonly ApplicationDbContext _dbContext = dbContext;
     private readonly ILogger<AzureCommonAlertService> _logger = logger;

@@ -42,7 +42,7 @@ public class QueueProcessorWorker(
                     continue;
                 }
 
-                using IServiceScope scope = _serviceProvider.CreateScope();
+                using AsyncServiceScope scope = _serviceProvider.CreateAsyncScope();
 
                 AzureCommonAlertService azureCommonAlertService = scope.ServiceProvider
                 .GetRequiredService<AzureCommonAlertService>();
