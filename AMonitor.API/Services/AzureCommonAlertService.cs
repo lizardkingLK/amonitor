@@ -17,14 +17,12 @@ public class AzureCommonAlertService(
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("info. processing and storing alert to db...");
-        
+
         AzureCommonAlertPayload alertRecord = new()
         {
             Id = Guid.NewGuid(),
             SchemaId = "azureMonitorCommonAlertSchema",
-            DataJson = JsonSerializer.Serialize(
-                JsonDocument.Parse(rawJson),
-                ConfigurationSerializerContext.Default.AlertData)
+            DataJson = rawJson
         };
 
         _dbContext.Alerts.Add(alertRecord);
