@@ -12,7 +12,7 @@ namespace AMonitor.API.Data.Compiled
     public partial class ApplicationDbContextModel
     {
         private ApplicationDbContextModel()
-            : base(skipDetectChanges: false, modelId: new Guid("afdb164f-9ff7-46f8-91fd-c58478d5645d"), entityTypeCount: 1)
+            : base(skipDetectChanges: false, modelId: new Guid("139506ba-053f-4dfa-ac65-7568521208f1"), entityTypeCount: 1)
         {
         }
 
