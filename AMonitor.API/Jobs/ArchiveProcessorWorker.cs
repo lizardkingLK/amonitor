@@ -39,7 +39,7 @@ public class ArchiveProcessorWorker(
                 .GetRequiredService<AzureCommonAlertService>();
                 List<AzureCommonAlertPayload> oldAlerts = await azureCommonAlertService
                 .GetAlertsOlderThan(
-                    TimeSpan.FromMinutes(1),
+                    TimeSpan.FromDays(30),
                     stoppingToken);
                 if (oldAlerts.Count == 0)
                 {
@@ -54,7 +54,7 @@ public class ArchiveProcessorWorker(
                 }
 
                 BlobContainerClient containerClient = _storageServiceClient!
-                .GetBlobContainerClient("amonitor-cold-storage");
+                .GetBlobContainerClient(_storageOptions.Value.StorageName);
 
                 string blobName = $"archive-{DateTime.UtcNow:yyyy-MM-dd}.json";
                 BlobClient blobClient = containerClient.GetBlobClient(blobName);
