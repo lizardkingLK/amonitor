@@ -14,6 +14,10 @@ public class AzureCommonAlertPayload
     [JsonPropertyName("schemaId")]
     public string? SchemaId { get; set; }
 
+    [Column("fired_date_time")]
+    public DateTimeOffset FiredDateTime { get; set; } = DateTimeOffset.UtcNow;
+
+
     [NotMapped]
     [JsonPropertyName("data")]
     public AlertData? Data { get; set; }

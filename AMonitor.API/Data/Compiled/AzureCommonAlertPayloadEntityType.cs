@@ -20,7 +20,7 @@ namespace AMonitor.API.Data.Compiled
                 "AMonitor.API.Models.Common.AzureCommonAlertPayload",
                 typeof(AzureCommonAlertPayload),
                 baseEntityType,
-                propertyCount: 3,
+                propertyCount: 4,
                 keyCount: 1);
 
             var id = runtimeEntityType.AddProperty(
@@ -42,6 +42,15 @@ namespace AMonitor.API.Data.Compiled
             dataJson.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
             dataJson.AddAnnotation("Relational:ColumnName", "data");
             dataJson.AddAnnotation("Relational:ColumnType", "jsonb");
+
+            var firedDateTime = runtimeEntityType.AddProperty(
+                "FiredDateTime",
+                typeof(DateTimeOffset),
+                propertyInfo: typeof(AzureCommonAlertPayload).GetProperty("FiredDateTime", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(AzureCommonAlertPayload).GetField("<FiredDateTime>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
+            firedDateTime.AddAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+            firedDateTime.AddAnnotation("Relational:ColumnName", "fired_date_time");
 
             var schemaId = runtimeEntityType.AddProperty(
                 "SchemaId",
