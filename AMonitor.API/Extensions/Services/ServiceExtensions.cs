@@ -1,6 +1,7 @@
 using AMonitor.API.Jobs;
 using AMonitor.API.Models.Options;
 using AMonitor.API.Services;
+using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 
 namespace AMonitor.API.Extensions.Services;
@@ -32,9 +33,26 @@ public static class ServiceExtensions
                 }));
         }
 
+        StorageOptions? storageOptions = configuration
+        .GetSection(StorageOptions.SectionName)
+        .Get<StorageOptions>();
+
+        if (storageOptions == null ||
+            string.IsNullOrWhiteSpace(storageOptions.ConnectionString) ||
+            storageOptions.ConnectionString == "USE_DEVELOPMENT_PLACEHOLDER")
+        {
+            services.AddSingleton<BlobServiceClient>(provider => null!);
+        }
+        else
+        {
+            services.AddSingleton(new BlobServiceClient(
+                storageOptions.ConnectionString));
+        }
+
         services.AddScoped<AzureCommonAlertService>();
 
         services.AddHostedService<QueueProcessorWorker>();
+        services.AddHostedService<ArchiveProcessorWorker>();
 
         return services;
     }
