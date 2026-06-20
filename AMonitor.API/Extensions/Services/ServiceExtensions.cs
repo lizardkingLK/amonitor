@@ -14,9 +14,10 @@ public static class ServiceExtensions
         QueueOptions? queueOptions = configuration
         .GetSection(QueueOptions.SectionName)
         .Get<QueueOptions>();
+
         if (queueOptions == null ||
-        string.IsNullOrWhiteSpace(queueOptions.ConnectionString) ||
-        queueOptions.ConnectionString == "USE_DEVELOPMENT_PLACEHOLDER")
+            string.IsNullOrWhiteSpace(queueOptions.ConnectionString) ||
+            queueOptions.ConnectionString == "USE_DEVELOPMENT_PLACEHOLDER")
         {
             services.AddSingleton<QueueClient>(provider => null!);
         }
@@ -24,7 +25,11 @@ public static class ServiceExtensions
         {
             services.AddSingleton(new QueueClient(
                 queueOptions.ConnectionString,
-                queueOptions.QueueName));
+                queueOptions.QueueName,
+                new QueueClientOptions
+                {
+                    MessageEncoding = QueueMessageEncoding.Base64,
+                }));
         }
 
         services.AddScoped<AzureCommonAlertService>();
