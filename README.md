@@ -1,6 +1,8 @@
 # AMonitor
 
+<!--
 [![Secure Production CD Pipeline](https://github.com/lizardkingLK/amonitor/actions/workflows/deploy.yml/badge.svg)](https://github.com/lizardkingLK/amonitor/actions/workflows/deploy.yml)
+-->
 
 ### A simple dashboard for azure monitor
 
@@ -24,6 +26,50 @@ AMonitor employs an asynchronous, event-driven pattern designed to guarantee zer
    ├── [.NET 10 API Ingestion Daemon] (High-Performance Worker / Native AOT)
    ├── [TimescaleDB Database Core] (Time-Series Optimization Tables)
    └── [Grafana Analytics Workspace] (Live Real-Time Dashboards Panel)
+```
+
+## High Level Architectural Diagram
+
+```mermaid
+graph TD
+    %% Azure Platform Boundary
+    subgraph Azure_Cloud_Fabric [Azure Subscription Workspace Boundary]
+        A[Cloud Monitor Alert Trigger] -->|Intercept Everything| B(Alert Processing Rule: rule_default)
+        B -->|Secure HTTP POST JSON| C[Azure Logic App Ingress]
+        C -->|XML Data Wrapping Wrap| D[(Azure Storage Queue: amonitorqueue)]
+    end
+
+    %% GitHub Pipeline Boundary
+    subgraph GitHub_CD_Vault [GitHub Actions Workspace Environment]
+        E[Code Push / Branch Merge] -->|SSH Script Loop Commands Trigger| F[Secure Deployment Runner Engine]
+    end
+
+    %% Production VM Engine Boundary
+    subgraph Ubuntu_Linux_VM [Azure Ubuntu Production Virtual Machine Server]
+        F -->|Enforce HTTPS Git Pull| G[Host File System Project Folder]
+        G -->|Mount Volumes Path Mapping| H[Nginx Proxy Ingress Gateway]
+        
+        %% Docker Network Shield
+        subgraph Docker_Bridge_Network [Isolated Virtual Private Container Network]
+            H -->|Route Port 443 Traffic| I[.NET 10 Ingestion API Container]
+            D -->|Continuous Polling Loop Ingest| J[.NET Background Worker Daemon]
+            J -->|Create Scoped Context Save| K[(TimescaleDB Core Metrics Drive)]
+            I -->|Execute Entity Framework Operations| K
+            H -->|Route Port 80 Traffic| L[Grafana Workspace Panel Dashboard]
+            L -->|Lateral JSON SQL Queries Fetch| K
+            M[Cold Storage Archiver Task] -->|24-Hour DB Purge Sweep Clean| K
+        end
+    end
+
+    %% Cold Storage Upload Output
+    M -->|Upload Compressed JSON Files Package| N[(Azure Blob Storage: amonitor-cold-storage)]
+
+    %% Styling Elements Visual Theme Anchors
+    style Azure_Cloud_Fabric fill:#f0f8ff,stroke:#0078d4,stroke-width:2px;
+    style GitHub_CD_Vault fill:#f9f9f9,stroke:#24292e,stroke-width:2px;
+    style Ubuntu_Linux_VM fill:#fff5ee,stroke:#f05032,stroke-width:2px;
+    style Docker_Bridge_Network fill:#f5fffa,stroke:#00bfff,stroke-width:2px;
+
 ```
 
 ---
@@ -104,11 +150,3 @@ or use the script `script_docker_dev.sh`
 *Your local worker loop will print out a safe placeholder warning, turning off cloud queue polling while keeping your endpoints and database active for native terminal debugging tests!*
 
 ---
-
-## Automated Let's Encrypt Certificate Management
-
-Production telemetry uses a custom shell automated job engine to ensure your secure HTTPS padlock paths never drop connection lines. The scheduled execution loop steps run on a weekly schedule inside your host VM crontab:
-
-```text
-0 2 * * 1 /home/azureuser/amonitor-app/renew_certs.sh >> /home/azureuser/amonitor-app/cron_renewal.log 2>&1
-```
