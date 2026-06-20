@@ -2,6 +2,7 @@ using System.Text.Json;
 using AMonitor.API.Data;
 using AMonitor.API.Extensions.Logging;
 using AMonitor.API.Models.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace AMonitor.API.Services;
 
@@ -45,5 +46,24 @@ public class AzureCommonAlertService(
 
         _dbContext.Alerts.Add(alertRecord);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<List<AzureCommonAlertPayload>> GetAlertsOlderThan(
+        TimeSpan oldAbout,
+        CancellationToken stoppingToken)
+    {
+        DateTimeOffset ageBoundary = DateTimeOffset.UtcNow.Add(-oldAbout);
+
+        return await _dbContext.Alerts
+        .Where(a => EF.Property<DateTimeOffset>(a, "FiredDateTime") < ageBoundary)
+        .ToListAsync(stoppingToken);
+    }
+
+    public async Task RemoveAlerts(
+        List<AzureCommonAlertPayload> oldAlerts,
+        CancellationToken stoppingToken)
+    {
+        _dbContext.Alerts.RemoveRange(oldAlerts);
+        await _dbContext.SaveChangesAsync(stoppingToken);
     }
 }

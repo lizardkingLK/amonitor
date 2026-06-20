@@ -7,6 +7,7 @@ namespace AMonitor.API.Extensions.Configuration;
 
 [JsonSerializable(typeof(DatabaseOptions))]
 [JsonSerializable(typeof(QueueOptions))]
+[JsonSerializable(typeof(StorageOptions))]
 [JsonSerializable(typeof(AzureCommonAlertPayload))]
 internal partial class ConfigurationSerializerContext : JsonSerializerContext { }
 
@@ -25,9 +26,12 @@ public static class ConfigurationExtensions
 
         builder.Services.Configure<DatabaseOptions>(
             builder.Configuration.GetSection(DatabaseOptions.SectionName));
-            
+
         builder.Services.Configure<QueueOptions>(
             builder.Configuration.GetSection(QueueOptions.SectionName));
+
+        builder.Services.Configure<StorageOptions>(
+            builder.Configuration.GetSection(StorageOptions.SectionName));
 
         return builder;
     }

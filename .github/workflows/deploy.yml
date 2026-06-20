@@ -41,6 +41,8 @@ jobs:
             export DB_CONNECTION_STRING="${{ secrets.DB_CONNECTION_STRING }}"
             export QUEUE_CONNECTION_STRING="${{ secrets.QUEUE_CONNECTION_STRING }}"
             export QUEUE_NAME="${{ secrets.QUEUE_NAME }}"
+            export STORAGE_CONNECTION_STRING="${{ secrets.STORAGE_CONNECTION_STRING }}"
+            export STORAGE_NAME="${{ secrets.STORAGE_NAME }}"
 
             echo "Recompiling source code and starting Production environment..."
             timeout 30s docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build || true
