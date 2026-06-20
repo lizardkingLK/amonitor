@@ -1,6 +1,8 @@
 # AMonitor
 
+<!--
 [![Secure Production CD Pipeline](https://github.com/lizardkingLK/amonitor/actions/workflows/deploy.yml/badge.svg)](https://github.com/lizardkingLK/amonitor/actions/workflows/deploy.yml)
+-->
 
 ### A simple dashboard for azure monitor
 
