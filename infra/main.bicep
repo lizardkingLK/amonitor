@@ -164,7 +164,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
 
 // 6. AZURE STORAGE ACCOUNT (QUEUES & BLOB COLD STORAGE)
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: '${projectPrefix}store${uniqueString(resourceGroup().id)}'
+  name: '${take(projectPrefix, 4)}st${uniqueString(resourceGroup().id)}'
   location: location
   sku: {
     name: 'Standard_LRS'
@@ -189,7 +189,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
   properties: {
     state: 'Enabled'
     definition: {
-      '$schema': 'https://azure.com'
+      '$schema': 'https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#'
       contentVersion: '1.0.0.0'
       triggers: {
         manual: {
@@ -257,4 +257,22 @@ resource ruleDefault 'Microsoft.AlertsManagement/actionRules@2021-08-08' = {
   }
 }
 
+// 12. AUTOMATED DOCKER ENGINE BOOTSTRAPPER EXTENSION
+resource vmDockerSetup 'Microsoft.Compute/virtualMachines/extensions@2023-09-01' = {
+  parent: vm
+  name: 'InstallDockerAndPrepareEnvironment'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Azure.Extensions'
+    type: 'CustomScript'
+    typeHandlerVersion: '2.1'
+    autoUpgradeMinorVersion: true
+    settings: {
+      commandToExecute: 'sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 && sudo usermod -aG docker azureuser && mkdir -p /home/azureuser/amonitor-app && chown -R azureuser:azureuser /home/azureuser/amonitor-app'
+    }
+  }
+}
+
 output vmPublicIP string = publicIp.properties.ipAddress
+output STORAGE_NAME string = storageAccount.name
+output QUEUE_NAME string = 'amonitorqueue'
