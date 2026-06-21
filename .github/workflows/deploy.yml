@@ -22,10 +22,13 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           script: |
-            echo "Checking if application directory exists..."
-            if [ ! -d "$HOME/amonitor-app" ]; then
-            echo "Fresh VM detected! Cloning repository for the first time..."
-            git clone ${{ secrets.REPO_URL }} $HOME/amonitor-app
+            echo "Verifying application repository existence..."
+            if [ ! -d "$HOME/amonitor-app/.git" ]; then
+              echo "Clean workspace or incomplete repository detected! Reinitializing clone..."
+              
+              rm -rf $HOME/amonitor-app
+              
+              git clone ${{ secrets.REPO_URL }} $HOME/amonitor-app
             fi
 
             cd $HOME/amonitor-app
