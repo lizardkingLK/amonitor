@@ -268,7 +268,7 @@ resource vmDockerSetup 'Microsoft.Compute/virtualMachines/extensions@2023-09-01'
     typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
     settings: {
-      commandToExecute: 'sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 && sudo usermod -aG docker azureuser && mkdir -p /home/azureuser/amonitor-app && chown -R azureuser:azureuser /home/azureuser/amonitor-app'
+      commandToExecute: 'sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 certbot && sudo usermod -aG docker azureuser && mkdir -p /home/azureuser/amonitor-app && chown -R azureuser:azureuser /home/azureuser/amonitor-app'
     }
   }
 }
