@@ -3,8 +3,14 @@
 
 #!/bin/bash
 
-DOMAIN="lizardkinglk.xyz"
-EMAIL="chansanfdo@gmail.com"
+read -p "enter. your custom domain name (e.g., mysite.xyz): " DOMAIN
+read -p "enter. your notification email address (for Let's Encrypt alerts): " EMAIL
+
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+    echo "error. both domain name and email parameters are required to run."
+    exit 1
+fi
+
 APP_DIR="$HOME/amonitor-app"
 
 echo "info. generating ssl certificate started..."
