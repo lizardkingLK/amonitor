@@ -26,6 +26,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=3x2?F#wIh9Cod|!p=0VjeO5K=8%5{N
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana-provisioning/datasources:/etc/grafana/provisioning/datasources:ro
 
 volumes:
   timescaledb_data:

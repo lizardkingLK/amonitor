@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    user: postgres
+    database: alerts_db
+    secureJsonData:
+      password: secret
+    jsonData:
+      sslmode: "disable"
+      encrypt: "disable"
+      timescaledb: true
+    isDefault: true
