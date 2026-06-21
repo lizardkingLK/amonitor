@@ -128,6 +128,7 @@ To activate your automated deployment pipeline, navigate to your **GitHub Reposi
 * `SSH_HOST`: Your newly generated Azure VM Static Public IP address string.
 * `SSH_USERNAME`: Your specified VM terminal username (Default: `azureuser`).
 * `SSH_KEY`: The contents of your private identity key file (`.pem`).
+* `SSH_PASSPHRASE`: The passphrase of your ssh key and empty if not configured.
 * `REPO_URL`: The HTTPS link format of your repo/fork: `https://github.com/<username>/amonitor.git`.
 * `DB_CONNECTION_STRING`: `Host=timescaledb;Database=alerts_db;Username=postgres;Password=secret`
 * `QUEUE_CONNECTION_STRING`: Your private Azure Storage Queue SAS credentials block.
