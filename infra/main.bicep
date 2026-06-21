@@ -182,43 +182,18 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices/containers@
   name: '${storageAccount.name}/default/amonitor-cold-storage'
 }
 
-// SECURE MANAGED IDENTITY API CONNECTION FOR QUEUES
-resource queueConnection 'Microsoft.Web/connections@2016-06-01' = {
-  name: 'azurequeues-connection'
-  location: location
-  properties: {
-    displayName: 'amonitor-storage-queue-link'
-    api: {
-      id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'azurequeues')
-    }
-    parameterValues: {
-      storageAccountName: storageAccount.name
-      sharedKey: storageAccount.listKeys().keys[0].value // Accesses your key safely
-    }
-  }
-  dependsOn: [
-    queueService
-  ]
-}
-
 // AUTOMATED LOGIC APP ENVELOPE BRIDGE (CLEAN & DYNAMIC)
 resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
   name: '${projectPrefix}-queue-bridge'
   location: location
   identity: {
-    type: 'UserAssigned'
+    type: 'SystemAssigned'
   }
   properties: {
     state: 'Enabled'
     definition: {
-      '$schema': 'https://azure.com'
+      '$schema': 'https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#'
       contentVersion: '1.0.0.0'
-      parameters: {
-        '$connections': {
-          defaultValue: {}
-          type: 'Object'
-        }
-      }
       triggers: {
         manual: {
           type: 'Request'
@@ -229,32 +204,18 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
         }
       }
       actions: {
-        Add_Message_To_Queue: {
-          type: 'ApiConnection'
+        Push_To_Storage_Queue: {
+          type: 'Http'
           inputs: {
-            host: {
-              connection: {
-                name: '@parameters(\'$connections\')[\'azurequeues\'][\'connectionId\']'
-              }
+            method: 'POST'
+            uri: 'https://${storageAccount.name}.queue.${environment().suffixes.storage}/amonitorqueue/messages'
+            headers: {
+              'Content-Type': 'application/xml'
             }
-            method: 'post'
-            path: '/v2/storageAccounts/@{encodeURIComponent(encodeURIComponent(\'${storageAccount.name}\'))}/queues/@{encodeURIComponent(\'amonitorqueue\')}/messages'
-            body: {
-              messageText: '@base64(string(triggerBody()))'
+            body: '<QueueMessage><MessageText>@{base64(string(triggerBody()))}</MessageText></QueueMessage>'
+            authentication: {
+              type: 'ManagedServiceIdentity'
             }
-          }
-        }
-      }
-    }
-    parameters: {
-      '$connections': {
-        value: {
-          azurequeues: {
-            connectionId: queueConnection.id
-            connectionName: queueConnection.name
-#disable-next-line BCP053
-            connectionRuntimeUrl: queueConnection.properties.connectionRuntimeUrl
-            id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'azurequeues')
           }
         }
       }
@@ -263,7 +224,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
 }
 
 // AUTOMATED STORAGE QUEUE RBAC ROLE ASSIGNMENT
-var storageQueueDataContributorRoleId = '19e11e2f-d98e-4a6e-8b1c-d1215124c14a'
+var storageQueueDataContributorRoleId = '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(storageAccount.id, logicApp.id, storageQueueDataContributorRoleId)
   scope: storageAccount
