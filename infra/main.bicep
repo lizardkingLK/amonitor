@@ -211,10 +211,12 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
             uri: 'https://${storageAccount.name}.queue.${environment().suffixes.storage}/amonitorqueue/messages'
             headers: {
               'Content-Type': 'application/xml'
+              'x-ms-version': '2023-08-03'
             }
             body: '<QueueMessage><MessageText>@{base64(string(triggerBody()))}</MessageText></QueueMessage>'
             authentication: {
               type: 'ManagedServiceIdentity'
+              audience: 'https://storage.azure.com'
             }
           }
         }
