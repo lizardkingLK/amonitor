@@ -1,7 +1,7 @@
 @description('The name prefix for all generated monitoring resources')
 param projectPrefix string = 'amonitor'
 
-@description('The location region for teh cloud infrastructure')
+@description('The location region for the cloud infrastructure')
 param location string = resourceGroup().location
 
 @description('The admin username for your virtual machine login')
@@ -11,7 +11,7 @@ param adminUsername string = 'azureuser'
 @secure()
 param adminSshKey string
 
-// 1. VIRTUAL NETWORK SWITCH PORTS
+// VIRTUAL NETWORK SWITCH PORTS
 resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
   name: '${projectPrefix}-vnet'
   location: location
@@ -30,7 +30,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
   }
 }
 
-// 2. NETWORK SECURITY GROUP (NSG) GATEWAY FIREWALL
+// NETWORK SECURITY GROUP (NSG) GATEWAY FIREWALL
 resource nsg 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
   name: '${projectPrefix}-nsg'
   location: location
@@ -79,7 +79,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
   }
 }
 
-// 3. PUBLIC STATIC IP ROUTER
+// PUBLIC STATIC IP ROUTER
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
   name: '${projectPrefix}-ip'
   location: location
@@ -91,7 +91,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
   }
 }
 
-// 4. VIRTUAL INTERFACE CARD (NIC) LINK
+// VIRTUAL INTERFACE CARD (NIC) LINK
 resource nic 'Microsoft.Network/networkInterfaces@2023-11-01' = {
   name: '${projectPrefix}-nic'
   location: location
@@ -115,7 +115,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-11-01' = {
   }
 }
 
-// 5. UBUNTU LINUX ENGINE MACHINE
+// UBUNTU LINUX ENGINE MACHINE
 resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: '${projectPrefix}-vm'
   location: location
@@ -162,7 +162,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   }
 }
 
-// 6. AZURE STORAGE ACCOUNT (QUEUES & BLOB COLD STORAGE)
+// AZURE STORAGE ACCOUNT (QUEUES & BLOB COLD STORAGE)
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: '${take(projectPrefix, 4)}st${uniqueString(resourceGroup().id)}'
   location: location
@@ -172,25 +172,53 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   kind: 'StorageV2'
 }
 
-// 7. INGESTION BUFFER QUEUE SERVICE
+// INGESTION BUFFER QUEUE SERVICE
 resource queueService 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-01-01' = {
   name: '${storageAccount.name}/default/amonitorqueue'
 }
 
-// 8. HISTORICAL COLD STORAGE BLOB CONTAINER
+// HISTORICAL COLD STORAGE BLOB CONTAINER
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   name: '${storageAccount.name}/default/amonitor-cold-storage'
 }
 
-// 9. AUTOMATED LOGIC APP ENVELOPE BRIDGE
+// SECURE MANAGED IDENTITY API CONNECTION FOR QUEUES
+resource queueConnection 'Microsoft.Web/connections@2016-06-01' = {
+  name: 'azurequeues-connection'
+  location: location
+  properties: {
+    displayName: 'amonitor-storage-queue-link'
+    api: {
+      id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'azurequeues')
+    }
+    parameterValues: {
+      storageAccountName: storageAccount.name
+      sharedKey: storageAccount.listKeys().keys[0].value // Accesses your key safely
+    }
+  }
+  dependsOn: [
+    queueService
+  ]
+}
+
+// AUTOMATED LOGIC APP ENVELOPE BRIDGE (CLEAN & DYNAMIC)
 resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
   name: '${projectPrefix}-queue-bridge'
   location: location
+  identity: {
+    type: 'UserAssigned'
+  }
   properties: {
     state: 'Enabled'
     definition: {
-      '$schema': 'https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#'
+      '$schema': 'https://azure.com'
       contentVersion: '1.0.0.0'
+      parameters: {
+        '$connections': {
+          defaultValue: {}
+          type: 'Object'
+        }
+      }
       triggers: {
         manual: {
           type: 'Request'
@@ -206,12 +234,27 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
           inputs: {
             host: {
               connection: {
-                name: '@parameters(\'$connections\')[\'azurequeues\'][\'connectionId\']'       
+                name: '@parameters(\'$connections\')[\'azurequeues\'][\'connectionId\']'
               }
             }
             method: 'post'
             path: '/v2/storageAccounts/@{encodeURIComponent(encodeURIComponent(\'${storageAccount.name}\'))}/queues/@{encodeURIComponent(\'amonitorqueue\')}/messages'
-            body: '@triggerbody()'
+            body: {
+              messageText: '@base64(string(triggerBody()))'
+            }
+          }
+        }
+      }
+    }
+    parameters: {
+      '$connections': {
+        value: {
+          azurequeues: {
+            connectionId: queueConnection.id
+            connectionName: queueConnection.name
+#disable-next-line BCP053
+            connectionRuntimeUrl: queueConnection.properties.connectionRuntimeUrl
+            id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'azurequeues')
           }
         }
       }
@@ -219,7 +262,19 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
   }
 }
 
-// 10. AUTOMATES ACTION GROUP WEBHOOK GATEWAY
+// AUTOMATED STORAGE QUEUE RBAC ROLE ASSIGNMENT
+var storageQueueDataContributorRoleId = '19e11e2f-d98e-4a6e-8b1c-d1215124c14a'
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, logicApp.id, storageQueueDataContributorRoleId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageQueueDataContributorRoleId)
+    principalId: logicApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// AUTOMATES ACTION GROUP WEBHOOK GATEWAY
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   name: '${projectPrefix}-ActionGroup'
   location: 'Global'
@@ -236,7 +291,7 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   }
 }
 
-// 11. AUTOMATED SUBSCRIPTION-WIDE ALERT PROCESSING RULE
+// AUTOMATED SUBSCRIPTION-WIDE ALERT PROCESSING RULE
 resource ruleDefault 'Microsoft.AlertsManagement/actionRules@2021-08-08' = {
   name: 'rule_default'
   location: 'Global'
@@ -257,7 +312,7 @@ resource ruleDefault 'Microsoft.AlertsManagement/actionRules@2021-08-08' = {
   }
 }
 
-// 12. AUTOMATED DOCKER ENGINE BOOTSTRAPPER EXTENSION
+// AUTOMATED DOCKER ENGINE BOOTSTRAPPER AND CERTBOT EXTENSION
 resource vmDockerSetup 'Microsoft.Compute/virtualMachines/extensions@2023-09-01' = {
   parent: vm
   name: 'InstallDockerAndPrepareEnvironment'
